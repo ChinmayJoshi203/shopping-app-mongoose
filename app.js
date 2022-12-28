@@ -54,7 +54,6 @@ app.use((req,res,next)=>{
 app.use((req,res,next)=>{
   res.locals.isAuthenticated= req.session.isLoggedIn
   res.locals.csrfToken= req.csrfToken()
-
   next()
 })
 
@@ -74,7 +73,6 @@ app.use(errorController.get404);
 mongoose.connect('mongodb+srv://chinmayj:tarmak007@cluster.cneduzo.mongodb.net/shop')
 .then(result=>
   {
-
   app.listen(3000)
   })
   .catch(err=> console.log(err))
