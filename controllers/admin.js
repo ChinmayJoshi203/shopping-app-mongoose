@@ -2,13 +2,11 @@ const Product = require('../models/product');
 //const mongodb=require('mongodb');
 const User = require('../models/user');
 
+const {validationResult}= require('express-validator')
+
 exports.getAddProduct = (req, res, next) => {
   console.log('In Get admin products')
-  res.render('admin/edit-product', {
-    pageTitle: 'Add Product',
-    path: '/admin/add-product',
-    editing: false,
-  });
+  
 };
 
 exports.postAddProduct = (req, res, next) => {
@@ -17,6 +15,7 @@ exports.postAddProduct = (req, res, next) => {
   const price = req.body.price;
   const description = req.body.description;
   const userId=req.session.user._id
+  const err=validationResult(req)
   const product=new Product(
     {
       title,
@@ -26,15 +25,25 @@ exports.postAddProduct = (req, res, next) => {
       userId
     }
   )
+  if(!err.isEmpty())
+  {
 
     product.save().then(result => {
       // console.log(result);
       console.log('Created Product');
-      res.redirect('/admin/products');
+      res.render('admin/edit-product', {
+        pageTitle: 'Add Product',
+        path: '/admin/add-product',
+        editing: false,
+      });
     })
     .catch(err => {
       console.log(err);
     });
+  }
+
+  
+
  };
 
 exports.getEditProduct = (req, res, next) => {
