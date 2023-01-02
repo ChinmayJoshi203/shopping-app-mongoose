@@ -23,6 +23,7 @@ exports.getLogin = (req, res, next) => {
     pageTitle: "Login",
     isAuthenticated: req.session.isLoggedIn,
     errorMessage: req.flash("error"),
+    oldInput:{email: ''}
   });
 };
 
@@ -45,7 +46,13 @@ exports.postLogin = (req, res, next) => {
             return req.session.save().then((result) => res.redirect("/"));
           }
           req.flash("error", "Invalid username or password");
-          return res.redirect("/login");
+         return res.render("auth/login", {
+            path: "/login",
+            pageTitle: "Login",
+            isAuthenticated: req.session.isLoggedIn,
+            errorMessage: req.flash("error"),
+            oldInput:{email: req.body.email}
+          });
         })
         .catch((err) => res.redirect("/login"));
     })
