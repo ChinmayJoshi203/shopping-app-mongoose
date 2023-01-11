@@ -194,7 +194,7 @@ exports.getInvoice = (req, res, next) => {
   let total=0
   order.products.forEach(product=>{
     total=total+product.quantity*product.product.price
-    pdfDoc.fontSize(14).text(product.product.title+'-'+product.quantity+'X'+product.product.price)
+    pdfDoc.fontSize(14).text(product.product.title+'-  '+product.quantity+'X'+product.product.price)
   })
 
   pdfDoc.text('--------------------------------------')
