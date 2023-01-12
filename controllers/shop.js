@@ -5,6 +5,8 @@ const Order = require("../models/order");
 const fs = require("fs");
 const path = require("path");
 const pdfDocument = require("pdfkit");
+const stripe= require('stripe')('sk_test_51MPL8HSAbZScGAxzv08dyf4HRxlmC5WjUbKLzl2uUB8YIHkGGZTNlwjcfIQ1FBW7vNQzaCcaiYTyU2S261feAzsV00qaGpC09h')
+
 exports.getProducts = (req, res, next) => {
   Product.find()
     .then((products) => {
@@ -129,6 +131,31 @@ exports.postCartDeleteProduct = (req, res, next) => {
     .catch((err) => console.log(err));
 };
 
+exports.getCheckoutSuccess = (req, res, next) => {
+  // let fetchedCart;
+  req.user
+    .populate("cart.items.productId")
+    .then((user) => {
+      let products = user.cart.items.map((i) => {
+        return { product: { ...i.productId._doc }, quantity: i.quantity };
+      });
+      const order = new Order({
+        user: {
+          email: req.user.email,
+          userId: req.user,
+        },
+        products: products,
+      });
+      return order.save();
+    })
+    .then((result) => {
+      res.redirect("/orders");
+    })
+    .then((res) => req.user.clearCart())
+    .catch((err) => console.log(err));
+};
+
+
 exports.postOrder = (req, res, next) => {
   // let fetchedCart;
   req.user
@@ -206,3 +233,44 @@ exports.getInvoice = (req, res, next) => {
   pdfDoc.end();
 });
 };
+
+
+exports.getCheckout=(req,res,next)=>{
+  let products
+  let total=0
+  req.user.populate("cart.items.productId").then((user) => {
+     products = user.cart.items;
+    products.forEach(product=>{
+      total+=product.quantity*product.productId.price
+    })
+    return stripe.checkout.sessions.create({
+      payment_method_types:['card'],
+      line_items: products.map(p=>{
+        return{
+          price_data:{
+            currency: 'usd',
+            unit_amount: p.productId.price*100,
+            product_data:{
+              name: p.productId.title,
+              description: p.productId.description,
+            }
+          },
+          
+          quantity: p.quantity
+        }
+      }),
+      mode:'payment',
+      success_url: req.protocol+'://'+req.get('host')+'/checkout/success',
+      cancel_url:req.protocol+'://'+req.get('host')+'/checkout/cancel'
+    })
+  })
+  .then( session=>{
+    res.render("shop/checkout", {
+      path: "/checkout",
+      pageTitle: "Checkout",
+      products: products,
+      totalSum: total,
+      sessionId: session.id
+    });
+  });
+}
